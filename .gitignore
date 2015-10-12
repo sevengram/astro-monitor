@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.tmp
+*~
+*.orig
+*.swp
+*.bak
+
+.idea/
+/logs/phd/2.txt
+/logs/bye/2.txt
