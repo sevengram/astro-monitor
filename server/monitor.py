@@ -8,9 +8,10 @@ import workers
 
 
 class BaseLogMonitor(object):
-    def __init__(self, path, clients, threads):
+    def __init__(self, path, clients, threads, timeout):
         self.label = 'log'
         self.path = path
+        self.timeout = timeout
         self.clients = clients
         self.threads = threads
         self._file = self._recent_log()
@@ -21,7 +22,7 @@ class BaseLogMonitor(object):
 
     def _check(self, text):
         self.clients.put_msg(self.label, 'info', text)
-        logging.info('%s|%s' % (self.label, text))
+        logging.debug('%s|%s' % (self.label, text))
 
     def _filter(self, logline):
         return True
@@ -46,36 +47,26 @@ class BaseLogMonitor(object):
         return workers.LogCheckThread(self._file, self._event, self._check, self._filter)
 
     def create_daemon_thread(self):
-        return workers.LogDaemonThread(self._event, self._search_log)
+        return workers.LogDaemonThread(self._event, self._search_log, self.timeout)
 
 
 class ByeLogMonitor(BaseLogMonitor):
-    def __init__(self, path, clients, threads):
-        super(ByeLogMonitor, self).__init__(path, clients, threads)
+    def __init__(self, path, clients, threads, timeout=300):
+        super(ByeLogMonitor, self).__init__(path, clients, threads, timeout)
         self.label = 'bye'
 
-    def _filter(self, logline):
-        parts = logline.split()
-        if len(parts) < 6:
-            return False
-        typ = parts[2].strip('[]')
-        text = ' '.join(parts[5:])
-        return text.startswith('Pausing') or (
-            typ == 'CameraTakePictureOnMessageRecieved' and text.startswith('TAKE')) or (
-                   typ == 'TakePictureBulbFramework' and text.startswith('BackgroundThreadProcessor')) or (
-                   typ == 'OnStateEventHandler' and text.startswith(
-                       'Items')) or typ == 'CameraImageDownloadProcessor' or (
-                   typ.startswith('IMG') and text.endswith('downloaded')) or text.startswith('Imaging')
+    def _recent_log(self):
+        return self.path + '/' + [fn for fn in os.listdir(self.path)[-2:] if fn.find('backgroundworker') == -1][-1]
 
     def _check(self, text):
         text = ' '.join(text.split()[5:])
         self.clients.put_msg(self.label, 'info', text)
-        logging.info('%s|%s' % (self.label, text))
+        logging.debug('%s|%s' % (self.label, text))
 
 
 class PhdLogMonitor(BaseLogMonitor):
-    def __init__(self, path, clients, threads):
-        super(PhdLogMonitor, self).__init__(path, clients, threads)
+    def __init__(self, path, clients, threads, timeout=10):
+        super(PhdLogMonitor, self).__init__(path, clients, threads, timeout)
         self.label = 'phd'
 
     def _filter(self, logline):

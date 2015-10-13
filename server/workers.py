@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import platform
 import threading
 import time
 from subprocess import Popen, PIPE
@@ -13,17 +14,16 @@ def open_log_process(logfile):
 
 
 class LogDaemonThread(threading.Thread):
-    def __init__(self, event, handler, inteval=10, timeout=30):
+    def __init__(self, event, handler, timeout):
         threading.Thread.__init__(self)
         self._event = event
         self.handler = handler
-        self.inteval = inteval
         self.timeout = timeout
 
     def run(self):
         last_update = time.time()
         while True:
-            time.sleep(self.inteval)
+            time.sleep(5)
             if self._event.isSet():
                 last_update = time.time()
                 self._event.clear()
@@ -60,8 +60,10 @@ class ProcessCheckThread(terminable_thread.TerminableThread):
         self.clients = clients
 
     def run(self):
+        flag = '-W' if platform.system().lower().startswith('cygwin') else '-ef'
+
         while True:
-            process = Popen(["ps -ef | grep 'eqmod\|phd\|BackyardEOS'"], shell=True, bufsize=1024, stdin=PIPE,
+            process = Popen(["ps %s | grep 'eqmod\|phd\|BackyardEOS'" % flag], shell=True, bufsize=1024, stdin=PIPE,
                             stdout=PIPE, close_fds=True)
             fout = process.stdout
             lines = fout.readlines()
@@ -73,13 +75,13 @@ class ProcessCheckThread(terminable_thread.TerminableThread):
         running = set([l.split('\\')[-1].strip(' \t\r\n') for l in lines])
         if essentials.issubset(running):
             msg = 'All running: ' + ','.join(running)
-            self.clients.put_msg('process', 'info', msg)
-            logging.info('process|' + msg)
+            self.clients.put_msg('proc', 'info', msg)
+            logging.debug('proc|' + msg)
         else:
             missing = essentials - running
             msg = 'Process missing:' + ','.join(missing)
-            self.clients.put_msg('process', 'error', msg)
-            logging.error('PROCESS|' + msg)
+            self.clients.put_msg('proc', 'error', msg)
+            logging.error('proc|' + msg)
 
 
 class MsgDispatchThread(threading.Thread):
