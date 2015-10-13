@@ -76,12 +76,12 @@ class ProcessCheckThread(terminable_thread.TerminableThread):
         if essentials.issubset(running):
             msg = 'All running: ' + ','.join(running)
             self.clients.put_msg('proc', 'info', msg)
-            logging.debug('proc|' + msg)
+            logging.debug('proc|%s', msg)
         else:
             missing = essentials - running
             msg = 'Process missing:' + ','.join(missing)
             self.clients.put_msg('proc', 'error', msg)
-            logging.error('proc|' + msg)
+            logging.error('proc|%s', msg)
 
 
 class MsgDispatchThread(threading.Thread):

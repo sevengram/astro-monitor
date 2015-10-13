@@ -48,13 +48,13 @@ class ConnectionRequestHandler(BaseRequestHandler):
         while True:
             try:
                 data = self.request.recv(1024).strip()
-                logging.debug('server|msg from %s %s' % (addr_port, data))
+                logging.debug('server|msg from %s %s', addr_port, data)
                 if data:
-                    self.request.sendall('ack|info|%s' % data)
+                    self.request.sendall('ack|debug|%s' % data)
                 else:
                     raise IOError
             except IOError:
-                logging.warning('server|broken from %s' % addr_port)
+                logging.warning('server|broken from %s', addr_port)
                 break
 
     def finish(self):

@@ -22,7 +22,7 @@ class BaseLogMonitor(object):
 
     def _check(self, text):
         self.clients.put_msg(self.label, 'info', text)
-        logging.debug('%s|%s' % (self.label, text))
+        logging.debug('%s|%s', self.label, text)
 
     def _filter(self, logline):
         return True
@@ -41,7 +41,7 @@ class BaseLogMonitor(object):
         else:
             msg = 'stop working!'
             self.clients.put_msg(self.label, 'error', msg)
-            logging.error('%s|%s' % (self.label, msg))
+            logging.error('%s|%s', self.label, msg)
 
     def create_check_thread(self):
         return workers.LogCheckThread(self._file, self._event, self._check, self._filter)
@@ -60,12 +60,16 @@ class ByeLogMonitor(BaseLogMonitor):
 
     def _check(self, text):
         text = ' '.join(text.split()[5:])
-        self.clients.put_msg(self.label, 'info', text)
-        logging.debug('%s|%s' % (self.label, text))
+        if text.find('DISCONNECTED!') != -1 or text.find('SHUTDOWN!'):
+            self.clients.put_msg(self.label, 'error', text)
+            logging.error('%s|%s', self.label, text)
+        else:
+            self.clients.put_msg(self.label, 'info', text)
+            logging.debug('%s|%s', self.label, text)
 
 
 class PhdLogMonitor(BaseLogMonitor):
-    def __init__(self, path, clients, threads, timeout=10):
+    def __init__(self, path, clients, threads, timeout=15):
         super(PhdLogMonitor, self).__init__(path, clients, threads, timeout)
         self.label = 'phd'
 
