@@ -53,7 +53,7 @@ if __name__ == '__main__':
         data = sock.recv(1024)
         if not data:
             break
-        label, level, msg = tuple(data.split('|'))
+        label, level, msg = tuple(data.split('|')[:3])
         logging.log(level_map.get(level, 0), '%s|%s', label, msg)
         if label == 'ack':
             last_ack_time = long(msg.split('@')[-1])

@@ -60,7 +60,7 @@ class ByeLogMonitor(BaseLogMonitor):
 
     def _check(self, text):
         text = ' '.join(text.split()[5:])
-        if text.find('DISCONNECTED!') != -1 or text.find('SHUTDOWN!'):
+        if text.find('DISCONNECTED!') != -1 or text.find('SHUTDOWN!') != -1:
             self.clients.put_msg(self.label, 'error', text)
             logging.error('%s|%s', self.label, text)
         else:
