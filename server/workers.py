@@ -75,7 +75,7 @@ class ProcessCheckThread(terminable_thread.TerminableThread):
         running = set([l.split('\\')[-1].strip(' \t\r\n') for l in lines])
         if essentials.issubset(running):
             msg = 'All running: ' + ','.join(running)
-            self.clients.put_msg('proc', 'info', msg)
+            self.clients.put_msg('proc', 'debug', msg)
             logging.debug('proc|%s', msg)
         else:
             missing = essentials - running

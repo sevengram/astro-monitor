@@ -50,12 +50,13 @@ if __name__ == '__main__':
     t.setDaemon(True)
     t.start()
     while True:
-        data = sock.recv(1024)
-        if not data:
+        block = sock.recv(1024)
+        if not block:
             break
-        label, level, msg = tuple(data.split('|')[:3])
-        logging.log(level_map.get(level, 0), '%s|%s', label, msg)
-        if label == 'ack':
-            last_ack_time = long(msg.split('@')[-1])
+        for data in block.split('#')[:-1]:
+            label, level, msg = tuple(data.split('|')[:3])
+            logging.log(level_map.get(level, 0), '%s|%s', label, msg)
+            if label == 'ack':
+                last_ack_time = long(msg.split('@')[-1])
     print "client close"
     sock.close()

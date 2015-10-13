@@ -23,7 +23,7 @@ class ClientPool(object):
         del self._socks[address]
 
     def put_msg(self, tag, level, msg):
-        self._msg_queue.put('|'.join([tag, level, msg]))
+        self._msg_queue.put('|'.join([tag, level, msg]) + '#')
 
     def dispatch_msg(self):
         msg = self._msg_queue.get()
@@ -50,7 +50,7 @@ class ConnectionRequestHandler(BaseRequestHandler):
                 data = self.request.recv(1024).strip()
                 logging.debug('server|msg from %s %s', addr_port, data)
                 if data:
-                    self.request.sendall('ack|debug|%s' % data)
+                    self.request.sendall('ack|debug|%s#' % data)
                 else:
                     raise IOError
             except IOError:
