@@ -3,11 +3,30 @@
 
 import argparse
 import logging
+import os
 import socket
 import time
 import threading
 
 last_ack_time = 0
+
+is_warning = False
+warning_sound = '/home/jfan/Music/warning.mp3'
+
+
+def start_warning():
+    global is_warning
+    if not is_warning:
+        is_warning = True
+        wt = WarningThread()
+        wt.start()
+
+
+class WarningThread(threading.Thread):
+    def run(self):
+        global is_warning
+        os.system('cvlc %s' % warning_sound)
+        is_warning = False
 
 
 class DaemonThread(threading.Thread):
@@ -20,7 +39,8 @@ class DaemonThread(threading.Thread):
             time.sleep(1)
             tnow = time.time()
             if last_ack_time != 0 and tnow - last_ack_time > 2:
-                print 'error'
+                logging.error('ack timeout!!')
+                start_warning()
             self.sock.sendall('syn@%d' % tnow)
 
 
@@ -52,11 +72,14 @@ if __name__ == '__main__':
     while True:
         block = sock.recv(1024)
         if not block:
+            logging.error('socket closed by peer!!')
+            start_warning()
             break
+        last_ack_time = time.time()
         for data in block.split('#')[:-1]:
             label, level, msg = tuple(data.split('|')[:3])
             logging.log(level_map.get(level, 0), '%s|%s', label, msg)
-            if label == 'ack':
-                last_ack_time = long(msg.split('@')[-1])
-    print "client close"
+            if level == 'error':
+                start_warning()
+    logging.info("client close")
     sock.close()

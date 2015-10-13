@@ -69,7 +69,7 @@ class ByeLogMonitor(BaseLogMonitor):
 
 
 class PhdLogMonitor(BaseLogMonitor):
-    def __init__(self, path, clients, threads, timeout=15):
+    def __init__(self, path, clients, threads, timeout=20):
         super(PhdLogMonitor, self).__init__(path, clients, threads, timeout)
         self.label = 'phd'
 
