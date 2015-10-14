@@ -29,8 +29,7 @@ def start_warning():
 class WarningThread(threading.Thread):
     def run(self):
         global is_warning
-        if platform.system().lower().startswith('cygwin'):
-            os.system(player + ' ' + warning_sound)
+        os.system(player + ' ' + warning_sound)
         is_warning = False
 
 

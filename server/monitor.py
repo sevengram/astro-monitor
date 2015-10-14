@@ -57,7 +57,7 @@ class ByeLogMonitor(BaseLogMonitor):
 
     def _check(self, text):
         text = ' '.join(text.split()[5:])
-        if text.find('DISCONNECTED!') != -1 or text.find('SHUTDOWN!') != -1:
+        if text.lower().find('disconnected') != -1 or text.find('shutdown') != -1:
             self.clients.put_msg(self.label, 'error', text)
             logging.error('%s|%s', self.label, text)
         else:
@@ -66,12 +66,12 @@ class ByeLogMonitor(BaseLogMonitor):
 
 
 class PhdLogMonitor(BaseLogMonitor):
-    def __init__(self, path, clients, threads, timeout=20):
+    def __init__(self, path, clients, threads, timeout=6):
         super(PhdLogMonitor, self).__init__(path, clients, threads, timeout)
         self.label = 'phd'
 
     def _check(self, text):
-        if text.find('DROP'):
+        if text.lower().find('drop') != -1:
             self.clients.put_msg(self.label, 'error', text)
             logging.error('%s|%s', self.label, text)
         else:
