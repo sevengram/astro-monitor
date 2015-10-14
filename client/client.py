@@ -15,7 +15,7 @@ is_warning = False
 is_win32 = platform.system().lower().startswith('cygwin')
 
 warning_sound = '/home/jfan/Music/warning.mp3'
-player = '/cygdrive/c/Program Files (x86)/Windows Media Player/wmplayer.exe' if is_win32 else 'cvlc'
+player = '/cygdrive/c/Program\ Files\ \(x86\)/Windows\ Media\ Player/wmplayer.exe' if is_win32 else 'cvlc'
 
 
 def start_warning():
