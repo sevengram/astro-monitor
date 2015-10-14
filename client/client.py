@@ -4,6 +4,7 @@
 import argparse
 import logging
 import os
+import platform
 import socket
 import time
 import threading
@@ -11,7 +12,10 @@ import threading
 last_ack_time = 0
 
 is_warning = False
+is_win32 = platform.system().lower().startswith('cygwin')
+
 warning_sound = '/home/jfan/Music/warning.mp3'
+player = '/cygdrive/c/Program Files (x86)/Windows Media Player/wmplayer.exe' if is_win32 else 'cvlc'
 
 
 def start_warning():
@@ -25,7 +29,8 @@ def start_warning():
 class WarningThread(threading.Thread):
     def run(self):
         global is_warning
-        os.system('cvlc %s' % warning_sound)
+        if platform.system().lower().startswith('cygwin'):
+            os.system(player + ' ' + warning_sound)
         is_warning = False
 
 
@@ -38,7 +43,7 @@ class DaemonThread(threading.Thread):
         while True:
             time.sleep(1)
             tnow = time.time()
-            if last_ack_time != 0 and tnow - last_ack_time > 2:
+            if last_ack_time != 0 and tnow - last_ack_time > 3:
                 logging.error('ack timeout!!')
                 start_warning()
             self.sock.sendall('syn@%d' % tnow)

@@ -34,10 +34,9 @@ class LogDaemonThread(threading.Thread):
 
 
 class LogCheckThread(terminable_thread.TerminableThread):
-    def __init__(self, logfile, event, handler, log_filter):
+    def __init__(self, logfile, event, handler):
         threading.Thread.__init__(self)
         self.handler = handler
-        self.filter = log_filter
         self._event = event
         self._process = open_log_process(logfile)
 
@@ -45,7 +44,7 @@ class LogCheckThread(terminable_thread.TerminableThread):
         fout = self._process.stdout
         while True:
             text = fout.readline().rstrip(' \t\r\n')
-            if text and self.filter(text):
+            if text:
                 self._event.set()
                 self.handler(text)
 
@@ -61,7 +60,6 @@ class ProcessCheckThread(terminable_thread.TerminableThread):
 
     def run(self):
         flag = '-W' if platform.system().lower().startswith('cygwin') else '-ef'
-
         while True:
             process = Popen(["ps %s | grep 'eqmod\|phd\|BackyardEOS'" % flag], shell=True, bufsize=1024, stdin=PIPE,
                             stdout=PIPE, close_fds=True)

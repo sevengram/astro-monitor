@@ -24,9 +24,6 @@ class BaseLogMonitor(object):
         self.clients.put_msg(self.label, 'info', text)
         logging.debug('%s|%s', self.label, text)
 
-    def _filter(self, logline):
-        return True
-
     def _search_log(self):
         new_logfile = self._recent_log()
         if new_logfile != self._file:
@@ -44,7 +41,7 @@ class BaseLogMonitor(object):
             logging.error('%s|%s', self.label, msg)
 
     def create_check_thread(self):
-        return workers.LogCheckThread(self._file, self._event, self._check, self._filter)
+        return workers.LogCheckThread(self._file, self._event, self._check)
 
     def create_daemon_thread(self):
         return workers.LogDaemonThread(self._event, self._search_log, self.timeout)
@@ -73,6 +70,10 @@ class PhdLogMonitor(BaseLogMonitor):
         super(PhdLogMonitor, self).__init__(path, clients, threads, timeout)
         self.label = 'phd'
 
-    def _filter(self, logline):
-        frame = logline.split(',')[0]
-        return frame.isdigit() and int(frame) % 5 == 0
+    def _check(self, text):
+        if text.find('DROP'):
+            self.clients.put_msg(self.label, 'error', text)
+            logging.error('%s|%s', self.label, text)
+        else:
+            self.clients.put_msg(self.label, 'info', text)
+            logging.debug('%s|%s', self.label, text)
