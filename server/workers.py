@@ -54,9 +54,15 @@ class LogCheckThread(terminable_thread.TerminableThread):
 
 
 class ProcessCheckThread(terminable_thread.TerminableThread):
-    def __init__(self, clients):
+    def __init__(self, clients, flags):
         threading.Thread.__init__(self)
         self.clients = clients
+        proc_names = {
+            'eqmod': 'eqmod.exe',
+            'phd': 'phd2.exe',
+            'bye': 'BinaryRivers.BackyardEOS.Start.Camera1.exe'
+        }
+        self.essentials = set(proc_names[f] for f in flags)
 
     def run(self):
         flag = '-W' if platform.system().lower().startswith('cygwin') else '-ef'
@@ -69,14 +75,13 @@ class ProcessCheckThread(terminable_thread.TerminableThread):
             time.sleep(5)
 
     def handle(self, lines):
-        essentials = {'BinaryRivers.BackyardEOS.Start.Camera1.exe', 'phd2.exe', 'eqmod.exe'}
         running = set([l.split('\\')[-1].strip(' \t\r\n') for l in lines])
-        if essentials.issubset(running):
+        if self.essentials.issubset(running):
             msg = 'All running: ' + ','.join(running)
             self.clients.put_msg('proc', 'debug', msg)
             logging.debug('proc|%s', msg)
         else:
-            missing = essentials - running
+            missing = self.essentials - running
             msg = 'Process missing:' + ','.join(missing)
             self.clients.put_msg('proc', 'error', msg)
             logging.error('proc|%s', msg)

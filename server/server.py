@@ -6,6 +6,7 @@ import logging
 import Queue
 from SocketServer import ThreadingTCPServer, BaseRequestHandler
 
+from sound import start_warning
 from workers import MsgDispatchThread, ProcessCheckThread
 from monitor import ByeLogMonitor, PhdLogMonitor
 
@@ -22,6 +23,8 @@ class ClientPool(object):
         del self._socks[address]
 
     def put_msg(self, tag, level, msg):
+        if level == 'error':
+            start_warning()
         self._msg_queue.put('|'.join([tag, level, msg]) + '#')
 
     def dispatch_msg(self):
@@ -72,8 +75,8 @@ level_map = {
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--bye', type=str, required=True, help='Log path of BackyardEOS')
-    parser.add_argument('--phd', type=str, required=True, help='Log path of PHDGuiding2')
+    parser.add_argument('--bye', type=str, help='Log path of BackyardEOS')
+    parser.add_argument('--phd', type=str, help='Log path of PHDGuiding2')
     parser.add_argument('--level', type=str, default='info', help='Log level')
     parser.add_argument('--port', type=int, default=4600)
     args = parser.parse_args()
@@ -83,13 +86,21 @@ if __name__ == '__main__':
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     worker_threads = {}
-    byelog = ByeLogMonitor(args.bye, client_pool, worker_threads)
-    phdlog = PhdLogMonitor(args.phd, client_pool, worker_threads)
-    worker_threads[byelog.label + 'log'] = byelog.create_check_thread()
-    worker_threads[byelog.label + 'daemon'] = byelog.create_daemon_thread()
-    worker_threads[phdlog.label + 'log'] = phdlog.create_check_thread()
-    worker_threads[phdlog.label + 'daemon'] = phdlog.create_daemon_thread()
-    worker_threads['psmonitor'] = ProcessCheckThread(client_pool)
+    flags = ['eqmod']
+
+    if args.bye:
+        byelog = ByeLogMonitor(args.bye, client_pool, worker_threads)
+        worker_threads[byelog.label + 'log'] = byelog.create_check_thread()
+        worker_threads[byelog.label + 'daemon'] = byelog.create_daemon_thread()
+        flags.append('bye')
+
+    if args.phd:
+        phdlog = PhdLogMonitor(args.phd, client_pool, worker_threads)
+        worker_threads[phdlog.label + 'log'] = phdlog.create_check_thread()
+        worker_threads[phdlog.label + 'daemon'] = phdlog.create_daemon_thread()
+        flags.append('phd')
+
+    worker_threads['psmonitor'] = ProcessCheckThread(client_pool, flags)
     worker_threads['logdispatch'] = MsgDispatchThread(client_pool)
     for t in worker_threads.values():
         t.setDaemon(True)

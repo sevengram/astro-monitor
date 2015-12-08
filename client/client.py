@@ -3,34 +3,12 @@
 
 import argparse
 import logging
-import os
-import platform
 import socket
 import time
 import threading
+from sound import start_warning
 
 last_ack_time = 0
-
-is_warning = False
-is_win32 = platform.system().lower().startswith('cygwin')
-
-warning_sound = 'e:/Music/bgm/warning.mp3' if is_win32 else '/home/jfan/Music/warning.mp3'
-player = '/cygdrive/c/Program\ Files\ \(x86\)/Windows\ Media\ Player/wmplayer.exe' if is_win32 else 'cvlc'
-
-
-def start_warning():
-    global is_warning
-    if not is_warning:
-        is_warning = True
-        wt = WarningThread()
-        wt.start()
-
-
-class WarningThread(threading.Thread):
-    def run(self):
-        global is_warning
-        os.system(player + ' ' + warning_sound)
-        is_warning = False
 
 
 class DaemonThread(threading.Thread):
@@ -42,7 +20,7 @@ class DaemonThread(threading.Thread):
         while True:
             time.sleep(1)
             tnow = time.time()
-            if last_ack_time != 0 and tnow - last_ack_time > 3:
+            if last_ack_time != 0 and tnow - last_ack_time > 4:
                 logging.error('ack timeout!!')
                 start_warning()
             self.sock.sendall('syn@%d' % tnow)
@@ -81,9 +59,12 @@ if __name__ == '__main__':
             break
         last_ack_time = time.time()
         for data in block.split('#')[:-1]:
-            label, level, msg = tuple(data.split('|')[:3])
-            logging.log(level_map.get(level, 0), '%s|%s', label, msg)
-            if level == 'error':
-                start_warning()
+            try:
+                label, level, msg = tuple(data.split('|')[:3])
+                logging.log(level_map.get(level, 0), '%s|%s', label, msg)
+                if level == 'error':
+                    start_warning()
+            except ValueError:
+                pass
     logging.info("client close")
     sock.close()

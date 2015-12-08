@@ -18,7 +18,7 @@ class BaseLogMonitor(object):
         self._event = threading.Event()
 
     def _recent_log(self):
-        return self.path + '/' + os.listdir(self.path)[-1]
+        return self.path + '/' + [f for f in os.listdir(self.path) if f.endswith('txt')][-1]
 
     def _check(self, text):
         self.clients.put_msg(self.label, 'info', text)
